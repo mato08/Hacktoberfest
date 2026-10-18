@@ -28,7 +28,7 @@ const signals: { rule: string; pattern: RegExp }[] = [
   },
   {
     rule: "Instruction override",
-    pattern: /\b(ignore|disregard|override|forget)\b.{0,80}\b(instructions?|rules?|prompts?|polic(?:y|ies))\b/i,
+    pattern: /\b(ignore|disregard|override|forget)\b.{0,80}\b(instructions?|rules?|prompts?|polic(?:y|ies)|requests?)\b/i,
   },
   {
     rule: "System or developer role impersonation",
@@ -40,7 +40,7 @@ const signals: { rule: string; pattern: RegExp }[] = [
   },
   {
     rule: "Embedded tool execution instruction",
-    pattern: /\b(?:call|invoke|execute|run|use)\b.{0,80}\b(?:safe_execute|get_unpaid_customers|get_customer|delete_customer|refund_customer)\b|\b(?:delete|erase|remove|refund)\s+(?:all\s+|the\s+)?customers?\b/i,
+    pattern: /\b(?:call|invoke|execute|run|use)\b.{0,80}\b[a-z]+_[a-z_]+\b|\b(?:overwrite|delete|erase|remove|refund)\b.{0,80}\b(?:[\w-]+\.\w+|customers?|files?|records?)\b/i,
   },
   {
     rule: "Secret disclosure or data exfiltration instruction",

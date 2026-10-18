@@ -1,10 +1,10 @@
 import { appendFile, mkdir, readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
-import { isToolName } from "./tools.js";
 import type { AuditInfo, CostEstimate, ExecutionResult, ToolRequest } from "./types.js";
 
 export interface AuditEvent {
+  eventType?: "tool_call" | "approval_authorization" | "approval_review";
   id: string;
   timestamp: string;
   agentId: string;
@@ -20,12 +20,10 @@ export interface AuditEvent {
   cost: CostEstimate;
 }
 
-const toolExecutionEstimates: Record<string, number> = {
-  get_unpaid_customers: 0.0005,
-  get_customer: 0.00025,
-  delete_customer: 0.003,
-  refund_customer: 0.005,
-};
+function estimatedRate(name: string, fallback: number): number {
+  const value = Number(process.env[name] ?? fallback);
+  return Number.isFinite(value) && value >= 0 ? value : fallback;
+}
 
 export function auditLogPath() {
   return resolve(process.env.AUDIT_LOG_PATH ?? "audit/audit-log.jsonl");
@@ -33,8 +31,8 @@ export function auditLogPath() {
 
 /** Transparent, configurable demo estimates; these are not a provider invoice. */
 export function estimateCost(request: ToolRequest, safety: ExecutionResult["safety"], executed: boolean): CostEstimate {
-  const decisionUsd = safety.evaluator?.source === "JEV" ? 0.0015 : 0.0001;
-  const toolUsd = executed && isToolName(request.toolName) ? toolExecutionEstimates[request.toolName] : 0;
+  const decisionUsd = safety.evaluator?.source === "JEV" ? estimatedRate("JEV_ESTIMATE_USD", 0.0015) : estimatedRate("LOCAL_ESTIMATE_USD", 0.0001);
+  const toolUsd = executed ? estimatedRate("UPSTREAM_TOOL_ESTIMATE_USD", 0) : 0;
   return {
     currency: "USD",
     estimateType: "demo_estimate",
@@ -46,11 +44,12 @@ export function estimateCost(request: ToolRequest, safety: ExecutionResult["safe
 
 type AuditOutcome =
   | { executed: true; safety: ExecutionResult["safety"]; result: unknown; cost: CostEstimate }
-  | { executed: false; safety: ExecutionResult["safety"]; requiresApproval?: true; cost: CostEstimate };
+  | { executed: false; safety: ExecutionResult["safety"]; requiresApproval?: true; cost: CostEstimate; result?: unknown };
 
-export async function appendAuditEvent(request: ToolRequest, response: AuditOutcome): Promise<AuditInfo> {
+export async function appendAuditEvent(request: ToolRequest, response: AuditOutcome, eventType: AuditEvent["eventType"] = "tool_call"): Promise<AuditInfo> {
   const logPath = auditLogPath();
   const event: AuditEvent = {
+    eventType,
     id: randomUUID(),
     timestamp: new Date().toISOString(),
     agentId: request.agentId ?? "unlabeled-agent",
@@ -61,7 +60,7 @@ export async function appendAuditEvent(request: ToolRequest, response: AuditOutc
     decision: response.safety.decision,
     executed: response.executed,
     requiresApproval: "requiresApproval" in response && response.requiresApproval === true,
-    result: response.executed ? response.result : null,
+    result: "result" in response ? response.result : null,
     safety: response.safety,
     cost: response.cost,
   };
@@ -90,7 +89,7 @@ export function reportAuditCosts(events: AuditEvent[]) {
   const group = (key: keyof Pick<AuditEvent, "agentId" | "workflowId" | "toolName">) => Object.entries(events.reduce<Record<string, { calls: number; executed: number; blocked: number; approvals: number; estimatedUsd: number }>>((totals, event) => {
     const name = event[key];
     const current = totals[name] ?? { calls: 0, executed: 0, blocked: 0, approvals: 0, estimatedUsd: 0 };
-    current.calls++;
+    current.calls += Number(!event.eventType || event.eventType === "tool_call");
     current.executed += Number(event.executed);
     current.blocked += Number(event.decision === "BLOCK");
     current.approvals += Number(event.decision === "REQUIRE_APPROVAL");
@@ -99,7 +98,7 @@ export function reportAuditCosts(events: AuditEvent[]) {
     return totals;
   }, {})).map(([name, totals]) => ({ name, ...totals }));
   return {
-    calls: events.length,
+    calls: events.filter(event => !event.eventType || event.eventType === "tool_call").length,
     estimatedUsd: Number(events.reduce((sum, event) => sum + event.cost.totalUsd, 0).toFixed(6)),
     byAgent: group("agentId"),
     byWorkflow: group("workflowId"),

@@ -1,4 +1,20 @@
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+
 export type SafetyDecision = "ALLOW" | "BLOCK" | "REQUIRE_APPROVAL";
+export interface ToolRiskMetadata {
+  riskLevel: "low" | "medium" | "high" | "critical";
+  operation: "read" | "write" | "delete" | "financial" | "external_send" | "unknown";
+  reason: string;
+}
+export interface ActionHistoryItem {
+  timestamp: string;
+  toolName: string;
+  arguments: Record<string, unknown>;
+  decision: SafetyDecision;
+  intentMatchScore: number;
+  riskScore: number;
+  executed: boolean;
+}
 
 export interface ExternalContent {
   source: string;
@@ -41,6 +57,7 @@ export interface SafetyResult {
   reason: string;
   promptInjection?: InjectionReport;
   evaluator?: EvaluatorInfo;
+  approval?: { id: string; status: string; reviewer?: string; reviewedAt?: string };
 }
 
 export interface ToolRequest {
@@ -48,6 +65,11 @@ export interface ToolRequest {
   toolName: string;
   arguments: Record<string, unknown>;
   untrustedContext?: ExternalContent[];
+  toolMetadata: Tool;
+  toolRisk: ToolRiskMetadata;
+  recentActions?: ActionHistoryItem[];
+  injectionReport?: InjectionReport;
+  contextScanIncomplete?: boolean;
   /** Caller labels make the audit report useful across many agents and workflows. */
   agentId?: string;
   workflowId?: string;
