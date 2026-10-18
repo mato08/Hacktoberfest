@@ -2,3 +2,5 @@ node_modules/
 dist/
 audit/
 .env
+work/
+*.log

@@ -1,24 +1,31 @@
 {
   "name": "intent-safety-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Minimal intent-aware safety gateway for MCP tools",
-  "engines": { "node": ">=22" },
+  "description": "Intent-aware STDIO MCP proxy for existing MCP servers",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node --env-file-if-exists=.env dist/index.js",
     "demo": "npm run build && node --env-file-if-exists=.env demo.mjs",
     "live-demo": "npm run build && node --env-file-if-exists=.env live-demo.mjs",
+    "approval-demo": "npm run build && node --env-file-if-exists=.env approval-demo.mjs",
     "audit-report": "npm run build && node audit-report.mjs",
     "jev-test": "npm run build && node --env-file-if-exists=.env jev-test.mjs",
-    "test": "npm run build && node --env-file-if-exists=.env --test test.mjs"
+    "test": "npm run build && node --test test.mjs approval-test.mjs integration-test.mjs approval-integration-test.mjs",
+    "test:unit": "npm run build && node --test test.mjs approval-test.mjs",
+    "test:integration": "npm run build && node --test integration-test.mjs approval-integration-test.mjs",
+    "probe": "npm run build && node upstream-probe.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.1",
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@modelcontextprotocol/server-filesystem": "1.0.0",
     "@types/node": "^22.0.0",
     "typescript": "7.0.2"
   }
