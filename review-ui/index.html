@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Intent Gateway · Human review</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body>
+  <header id="top"><a class="brand" href="#top" aria-label="Intent Gateway"><span class="mark">G</span> Intent Gateway</a><span class="connection" id="connection">Connecting…</span></header>
+  <main>
+    <section class="intro"><div><p class="eyebrow">HUMAN REVIEW / LOCAL SESSION</p><h1>Your agent proposes.<br>You decide.</h1><p class="subtitle">Review the original request and the exact action before it reaches your tools.</p></div><aside class="boundary"><span class="small-label">APPROVAL BOUNDARY</span><strong>One action. One approval.</strong><p>Reviews expire after a short window. Policy blocks cannot be overridden here.</p></aside></section>
+    <section class="stats" aria-label="Review totals"><div><span>Awaiting review</span><strong id="pending-count">0</strong></div><div><span>Executed</span><strong id="executed-count">0</strong></div><div><span>Stopped</span><strong id="stopped-count">0</strong></div><div><span>Mode</span><strong class="mode">Local reviewer</strong></div></section>
+    <p id="error" class="error" role="alert" hidden></p><p id="notice" class="notice" role="status" hidden></p>
+    <section class="workspace"><div class="queue"><div class="section-heading"><h2>Review queue</h2><span id="queue-label">This session</span></div><div id="pending"></div></div><aside class="activity"><div class="section-heading"><h2>Activity</h2><span>Latest first</span></div><div id="history"></div></aside></section>
+    <footer>Local review console · Action data stays in this gateway session. Audit records are saved by the gateway.</footer>
+  </main>
+</body>
+</html>
